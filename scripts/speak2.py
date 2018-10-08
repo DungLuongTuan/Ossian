@@ -68,9 +68,12 @@ def main_work():
                                     as defined in <ROOT>/recipes/<config> -directory""")
     a.add_argument('-bin', dest='custom_bindir')                                     
     a.add_argument('files', nargs='*', help="text files to speak, reading from stdin by default")
+    a.add_argument('-m', dest = 'model_dir', required = True, type = str, help = "model directory")
     opts = a.parse_args()
 
-    
+    dirs['TRAIN'] = opts.model_dir + "/train/"
+    dirs['VOICES'] = opts.model_dir + "/voices/"
+
     if opts.custom_bindir != None:
         dirs['BIN'] = opts.custom_bindir 
         
