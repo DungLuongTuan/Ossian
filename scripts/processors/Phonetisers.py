@@ -6,6 +6,7 @@
 from processors.UtteranceProcessor import SUtteranceProcessor, Element
 from naive import naive_util
 import default.const as c
+import unicodedata
 
 
 # import os
@@ -270,7 +271,6 @@ class StartEndPhonetiser(SUtteranceProcessor):
     def do_training(self, speech_corpus, text_corpus):
         print "StartEndPhonetiser requires no training"
 
-
 class ConcateVowelPhonetiser(SUtteranceProcessor):
     '''
     Add 'phonetic' segments consisting of standard orthography characters, converted into an ASCII-safe 'safetext' form
@@ -289,8 +289,20 @@ class ConcateVowelPhonetiser(SUtteranceProcessor):
         self.word_classes = word_classes
         self.probable_pause_classes = probable_pause_classes
         self.possible_pause_classes = possible_pause_classes
-        self.vi_consonants = ['b', 'd', 'h', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v', 'x', 'đ', 'f', 'q', 'c', 'k', 'z', 'w', 'tr', 'th', 'ch', 'ph', 'nh', 'kh', 'gi', 'qu', 'sh', 'gh', 'ng', 'ngh']
-        self.vi_cons_phone = ['b', 'd', 'h', 'l', 'm', 'n', 'p', 'r', 'sh', 't', 'v', 's', 'đ', 'f', 'k', 'k', 'k', 'z', 'w', 'tr', 'th', 'ch', 'f', 'nh', 'kh', 'z', 'kw', 'sh', 'g', 'ng', 'ng']
+        self.vi_consonants = [u'b', u'd', u'h', u'l', u'm', u'n', u'p', u'r', u's', u't', u'v', u'x', u'đ', u'f', u'q', u'c', u'k', u'z', u'w', u'tr', u'th', u'ch', u'ph', u'nh', u'kh', u'gi', u'qu', u'sh', u'gh', u'ng', u'ngh', u'g']
+        self.vi_cons_phone = [u'b', u'd', u'h', u'l', u'm', u'n', u'p', u'r', u'sh', u't', u'v', u's', u'đ', u'f', u'k', u'k', u'k', u'z', u'w', u'tr', u'th', u'ch', u'f', u'nh', u'kh', u'z', u'kw', u'sh', u'g', u'ng', u'ng', u'g']
+        self.vi_tones = [ u'a', u'á', u'à', u'ả', u'ã', u'ạ', u'ă', u'ắ', u'ằ', u'ẳ', u'ẵ', u'ặ', u'â', u'ấ', u'ầ',\
+                        u'ẩ', u'ẫ', u'ậ', u'e', u'é', u'è', u'ẻ', u'ẽ', u'ẹ', u'ê', u'ế', u'ề', u'ể', u'ễ', u'ệ', \
+                        u'i', u'í', u'ì', u'ỉ', u'ĩ', u'ị', u'o', u'ó', u'ò', u'ỏ', u'õ', u'ọ', u'ô', u'ố', u'ồ', \
+                        u'ổ', u'ỗ', u'ộ', u'ơ', u'ớ', u'ờ', u'ở', u'ỡ', u'ợ', u'u', u'ú', u'ù', u'ủ', u'ũ', u'ụ', \
+                        u'ư', u'ứ', u'ừ', u'ử', u'ữ', u'ự', u'y', u'ý', u'ỳ', u'ỷ', u'ỹ', u'ỵ', u'yê', u'yế', u'yề', \
+                        u'yể', u'yễ', u'yệ', u'iê', u'iế', u'iề', u'iể', u'iễ', u'iệ', u'oa', u'oá', u'oà', u'oả', \
+                        u'oã', u'oạ', u'oă', u'oắ', u'oằ', u'oẳ', u'oẵ', u'oặ', u'oe', u'oé', u'oè', u'oẻ', u'oẽ',\
+                        u'oẹ', u'oo', u'oó', u'oò', u'oỏ', u'oõ', u'oọ', u'uâ', u'uấ', u'uầ', u'uẩ', u'uẫ', u'uậ', \
+                        u'uê', u'uế', u'uề', u'uể', u'uễ', u'uệ', u'uô', u'uố', u'uồ', u'uổ', u'uỗ', u'uộ', u'uơ', \
+                        u'uớ', u'uờ', u'uở', u'uỡ', u'uợ', u'uy', u'uý', u'uỳ', u'uỷ', u'uỹ', u'uỵ', u'ươ', u'ướ', \
+                        u'ườ', u'ưở', u'ưỡ', u'ượ', u'uyê', u'uyế', u'uyề', u'uyể', u'uyễ', u'uyệ'
+        ]
         self.name_reps = {" ": "",
                  "-": "",
                  "0": "ZERO",
@@ -334,42 +346,41 @@ class ConcateVowelPhonetiser(SUtteranceProcessor):
         # return safetext_char
         return unicodedata.name(unicode(char))
 
+    def has_in(self, c, l):
+        for i in range(len(l)):
+            if unicode(c) == l[i]:
+                return True
+        return False
 
     def get_phonetic_segments(self, word):
         word = word.lower()
         safetext_word = []
-        unsafetext_word = []
         chars = '@'
         for i, char in enumerate(word + "@"):
-            if (chars + char in self.vi_consonants):
-                chars += char
+            safetext_char = ''
+            if self.has_in(char, self.vi_consonants):
+                if self.has_in(chars + char, self.vi_consonants):
+                    chars += char
+                    continue
+            elif self.has_in(char, self.vi_tones):
+                if self.has_in(chars + char, self.vi_tones):
+                    chars += char
+                    continue
+            elif i != len(word):
+                continue
+            if (chars == 'g') and (naive_util.safetext(char) in ['i', '_LATINSMALLLETTERIWITHGRAVE_', '_LATINSMALLLETTERIWITHACUTE_', '_LATINSMALLLETTERIWITHHOOKABOVE_', '_LATINSMALLLETTERIWITHTILDE_', '_LATINSMALLLETTERIWITHDOTBELOW_']):
+                chars += 'i'
+            if self.has_in(chars, self.vi_consonants):
+                for c in self.vi_cons_phone[self.vi_consonants.index(chars)]:
+                    safetext_char += self.get_safetext(c)
             else:
-                if (chars == 'g') and (naive_util.safetext(char) in ['i', '_LATINSMALLLETTERIWITHGRAVE_', '_LATINSMALLLETTERIWITHACUTE_', '_LATINSMALLLETTERIWITHHOOKABOVE_', '_LATINSMALLLETTERIWITHTILDE_', '_LATINSMALLLETTERIWITHDOTBELOW_']):
-                    chars += 'i'
-                safetext_char = ''
-                if (chars in self.vi_consonants):
-                    for c in self.vi_cons_phone[self.vi_consonants.index(chars)]:
-                        safetext_char += self.get_safetext(c)
-                elif chars in self.name_reps.keys():
-                    safetext_char += self.name_reps[chars]
-                else:
-                    safetext_char += self.get_safetext(chars)
-                safetext_word.append(safetext_char)
-                unsafetext_word.append(chars)
-                chars = char
-        
-        if (unsafetext_word[-1] in self.vi_consonants):
-            safetext_word[-1] = "END" + safetext_word[-1]
-        safetext_letters = [safetext_word[1]]
-        for i in range(2, len(safetext_word)):
-            if (unsafetext_word[i] not in self.vi_consonants) and (unsafetext_word[i-1] not in self.vi_consonants) and (naive_util.safetext(unsafetext_word[i-1]) != '_LATINSMALLLETTERDWITHSTROKE_'):
-                safetext_letters[-1] += safetext_word[i]
-            else:
-                safetext_letters.append(safetext_word[i])
-
-        for i in range(len(safetext_letters)):
-            safetext_letters[i] = "_" + safetext_letters[i].replace(" ", "") + "_"
-        return safetext_letters
+                for c in chars:
+                    safetext_char += self.get_safetext(c)
+            safetext_word.append(safetext_char)
+            chars = char
+        for i in range(len(safetext_word)):
+            safetext_word[i] = "_" + safetext_word[i].replace(" ", "") + "_"
+        return safetext_word[1:]
 
     def do_training(self, speech_corpus, text_corpus):
         print "ConcateVowelPhonetiser requires no training"
