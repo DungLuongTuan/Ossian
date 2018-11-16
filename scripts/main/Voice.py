@@ -265,6 +265,13 @@ class Voice(object):
                 utt.archive()
             #utt.pretty_print()            
             i += 1
+            
+            if processor.processor_name == "pause_predictor":
+                nodes = utt.all_nodes()
+                for node in nodes:
+                    if (node.get("token_class") == "space"):
+                        node.set("silence_predicted", "0")
+                        node.remove_children()
         #utt.pretty_print()  
         ## Save wave to named file?
         if output_wavefile:
